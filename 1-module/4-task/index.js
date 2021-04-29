@@ -1,10 +1,10 @@
+const SPAM_STRINGS = ['1xbet', 'xxx'];
+
 function checkSpam(str) {
-  let spamStrings = ['1xbet', 'xxx'];
+  const strInLC = str.toLowerCase();
 
-  str = str.toLowerCase();
-
-  for (let spamStr of spamStrings) {
-    if (str.indexOf(spamStr) !== -1) return true;
+  for (const spamStr of SPAM_STRINGS) {
+    if (strInLC.includes(spamStr)) return true;
   }
 
   return false;
