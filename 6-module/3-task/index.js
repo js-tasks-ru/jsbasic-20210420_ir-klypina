@@ -11,13 +11,19 @@ export default class Carousel {
   }
 
   _render() {
-    this.elem = document.createElement('div');
-    this.elem.classList.add('carousel');
-    this.elem.innerHTML = this._arrowsTemplate() + this._innerTemplate();
-
+    this.elem = createElement(this._caroselWrapperTemplate());
     this._carouselInner = this.elem.querySelector('.carousel__inner');
 
     this.elem.addEventListener('click', this._onCarouselClick);
+  }
+
+  _caroselWrapperTemplate() {
+    return `
+      <div class="carousel">
+      ${this._arrowsTemplate()}
+      ${this._innerTemplate()}
+      </div>
+    `;
   }
 
   _arrowsTemplate() {
