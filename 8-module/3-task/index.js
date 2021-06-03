@@ -6,31 +6,33 @@ export default class Cart {
   }
 
   addProduct(product) {
-    let newItem = true;
+    let cartItem = {};
 
     for (const item of this.cartItems) {
       if (item.product.id === product.id) {
         item.count++;
-        newItem = false;
+        cartItem = { ...item };
         break;
       }
     }
 
-    if (newItem) {
-      this.cartItems.push({ product: product, count: 1 });
+    if (Object.keys(cartItem).length === 0) {
+      cartItem = { product: product, count: 1 };
+      this.cartItems.push(cartItem);
     }
 
-    this.onProductUpdate(this.cartItems);
-
-    console.log(this.cartItems);
+    this.onProductUpdate(cartItem);
   }
 
   updateProductCount(productId, amount) {
+    let cartItem = {};
+
     for (let i = 0; i < this.cartItems.length; i++) {
       const item = this.cartItems[i];
 
       if (item.product.id === productId) {
         item.count += amount;
+        cartItem = { ...item };
 
         if (item.count === 0) {
           this.cartItems.splice(i, 1);
@@ -38,9 +40,7 @@ export default class Cart {
       }
     }
 
-    this.onProductUpdate(this.cartItems);
-
-    console.log(this.cartItems);
+    this.onProductUpdate(cartItem);
   }
 
   isEmpty() {
