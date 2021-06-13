@@ -3,7 +3,7 @@ import createElement from '../../assets/lib/create-element.js';
 export default class StepSlider {
   constructor({ steps, value = 0 }) {
     this.steps = steps;
-    this.value = value;
+    this.value = value + 1;
     this.elem = createElement(this._stepSliderTemplate());
     this.elem.addEventListener('click', this._onSliderClick);
 
@@ -12,7 +12,11 @@ export default class StepSlider {
     this._thumbElement.ondragstart = () => false;
     this._thumbElement.addEventListener('pointerdown', this._onThumbDown);
 
-    this._activeStepToggle(0);
+    this._activeStepToggle(this.value);
+    setTimeout(() => {
+      const stepLength = this.elem.offsetWidth / (this.steps - 1);
+      this._setThumbAndProgressElements(stepLength, this.value, this.elem.offsetWidth);
+    }, 0);
   }
 
 
@@ -30,7 +34,7 @@ export default class StepSlider {
     return `
       <div class="slider">
         <div class="slider__thumb">
-          <span class="slider__value">${this.value + 1}</span>
+          <span class="slider__value">${this.value}</span>
         </div>
         <div class="slider__progress"></div>
         <div class="slider__steps">
@@ -44,8 +48,8 @@ export default class StepSlider {
     const activeClass = 'slider__step-active';
 
     const stepsElements = this.elem.querySelectorAll('.slider__steps span');
-    stepsElements[this.value].classList.remove(activeClass);
-    stepsElements[step].classList.add(activeClass);
+    stepsElements[this.value - 1].classList.remove(activeClass);
+    stepsElements[step - 1].classList.add(activeClass);
     this.value = step;
   }
 
@@ -59,18 +63,29 @@ export default class StepSlider {
     const coords = this.elem.getBoundingClientRect();
 
     const moveAt = (pageX) => {
-      let thumbLeft = (pageX - coords.x) / coords.width * 100;
-      thumbLeft = thumbLeft < 0 ? 0 :
-        thumbLeft > coords.width ? coords.width : thumbLeft;
+      let mouseX = pageX;
+      let thumbLeft = (mouseX - coords.x) / coords.width * 100;
+
+      if (thumbLeft < 0) {
+        thumbLeft = 0;
+        mouseX = coords.x;
+      } else if (thumbLeft > 100) {
+        thumbLeft = 100;
+        mouseX = coords.right;
+      }
+
       this._thumbElement.style.left = thumbLeft + '%';
       this._progressElement.style.width = thumbLeft + '%';
 
 
-      this._changeSlider(pageX, event.pageY, false);
+      this._changeSlider(mouseX, event.pageY, false);
     };
 
     const onThumbUp = (event) => {
-      this._changeSlider(event.pageX, event.pageY);
+      const mouseX = event.pageX < coords.x ? coords.x :
+        event.pageX > coords.right ? coords.right : event.pageX;
+
+      this._changeSlider(mouseX, event.pageY);
 
       this.elem.classList.remove('slider_dragging');
 
@@ -95,23 +110,27 @@ export default class StepSlider {
   _changeSlider(x, y, finish = true) {
     const coords = this.elem.getBoundingClientRect();
     const stepLength = coords.width / (this.steps - 1);
-    const step = document.elementFromPoint(x, y).dataset.step || Math.round((x - coords.x) / stepLength);
+    const step = document.elementFromPoint(x, y).dataset.step || Math.round((x - coords.x) / stepLength) + 1;
 
     const sliderValueElement = this.elem.querySelector('.slider__value');
-    sliderValueElement.textContent = +step + 1;
+    sliderValueElement.textContent = step;
 
     if (finish) {
       this._activeStepToggle(step);
 
-      const leftPercents = Math.round(stepLength * step / coords.width * 100);
-      this._thumbElement.style.left = `${leftPercents}%`;
-      this._progressElement.style.width = `${leftPercents}%`;
+      this._setThumbAndProgressElements(stepLength, step, coords.width);
     }
+  }
+
+  _setThumbAndProgressElements(stepLength, step, width) {
+    const leftPercents = Math.round(stepLength * --step / width * 100);
+    this._thumbElement.style.left = `${leftPercents}%`;
+    this._progressElement.style.width = `${leftPercents}%`;
   }
 
   _createChangeEvent() {
     const onSliderChangeEvent = new CustomEvent('slider-change', {
-      detail: this.value,
+      detail: this.value - 1,
       bubbles: true
     });
     this.elem.dispatchEvent(onSliderChangeEvent);
